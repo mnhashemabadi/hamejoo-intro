@@ -22,6 +22,7 @@ Declared in `apps/backend/requirements.txt` (no versions pinned in that file):
 - psycopg
 - Redis (`redis`)
 - Pydantic Settings
+- slowapi
 
 Declared in `apps/crawler/requirements.txt` (no versions pinned in that file):
 
@@ -33,7 +34,7 @@ Declared in `apps/crawler/requirements.txt` (no versions pinned in that file):
 
 Data stores confirmed in application code, not only in the requirements list:
 
-- PostgreSQL full-text search (`to_tsvector`, `plainto_tsquery`, `ts_rank`) in `apps/backend/app/main.py` and `apps/backend/app/crud.py`
+- PostgreSQL full-text search (`to_tsvector`, `plainto_tsquery`) in `apps/backend/app/main.py` and `apps/backend/app/crud.py`; `ts_rank` on the search handler in `apps/backend/app/main.py`
 - Redis reads and writes in `apps/backend/app/main.py`
 
 ## Specialties

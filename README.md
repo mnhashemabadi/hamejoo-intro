@@ -1,122 +1,153 @@
 # همه‌جو
 
-همه‌جو جای جستجوی آگهی است. یک عبارت نوشته می‌شود و آگهی‌های مرتبط یک‌جا دیده می‌شوند؛ از مسکن و خودرو تا کالا و خدمات. نتیجه روی همه‌جو است و جزئیات آگهی روی منبع اصلی همان آگهی می‌ماند.
+من همه‌جو را ساختم چون آگهی مسکن، خودرو، کالا و خدمات روی چند سایت پخش است و من یک عبارت را کافی می‌خواستم. نتیجه روی همه‌جو می‌ماند. خود آگهی روی سایت منبع می‌ماند. همه‌جو فروشگاه نیست؛ من صفحهٔ مقصد نساختم.
 
 سایت: [hamejoo.ir](https://hamejoo.ir)
 
-## رفتار عمومی
+## چرا فقط فراداده را نگه می‌دارم
 
-صفحهٔ اصلی سایت به جستجو، تنظیمات، حریم خصوصی، شرایط استفاده، تماس، نحوهٔ کار جستجو، و پیشنهاد منبع پیوند می‌دهد. صفحهٔ «نحوهٔ کار جستجو» فرآیند را این‌طور شرح می‌دهد: خزش صفحهٔ عمومی و استخراج فراداده (عنوان، دسته‌بندی، قیمت، موقعیت، زمان انتشار)، نمایه‌سازی بعد از نرمال‌سازی، علامت «منقضی» وقتی آگهی در مبدأ حذف شده باشد و ماندن آن حدود هفت روز در نتایج، سپس حذف فیزیکی ردیف، و هدایت کلیک به صفحهٔ منبع. همان صفحهٔ عمومی می‌گوید تصاویر و توضیح بلند آگهی روی همه‌جو بارگذاری نمی‌شوند.
+روی صفحهٔ «نحوهٔ کار جستجو» نوشتم که خزش، صفحهٔ عمومی را می‌خواند و عنوان، دسته‌بندی، قیمت، موقعیت و زمان انتشار را برمی‌دارد. تصویر و توضیح بلند را روی همه‌جو بارگذاری نمی‌کنم. در جدول `listings` برای همین `snippet` را حداکثر ۳۰۰ نویسه گذاشتم و `image_url` فقط نشانی است، نه فایل تصویر. عنوان تا ۵۱۲ نویسه است. قیمت، متراژ، شهر، محله و تعداد اتاق کنار همان ردیف می‌نشینند تا فیلتر جستجو به متن کامل آگهی وابسته نباشد.
 
-کد با این شرح هم‌خوان است، بدون آنکه نام منابع خزش در این معرفی تکرار شود.
+کلیک، کاربر را به `source_url` می‌برد. در `apps/frontend/app/_lib/outbound.ts` لینک را `noopener noreferrer nofollow` گذاشتم و ثبت کلیک را با `navigator.sendBeacon` می‌فرستم، و اگر نباشد با `fetch` و `keepalive`. `POST /listing-clicks` فقط ۲۰۴ برمی‌گرداند. ردیف `listing_clicks` شناسهٔ آگهی، نام منبع و زمان است. نشانی خروجی و صفحه را ذخیره نمی‌کنم؛ وگرنه همه‌جو به لاگ مسیر کاربر تبدیل می‌شد.
+
+## سه برنامه، یک جدول
+
+درخت خصوصی سه برنامه دارد. وب `apps/frontend` است، نام بسته `hamejoo-frontend`. صفحهٔ اصلی `app/page.tsx` است و جستجو `app/search/page.tsx`. بقیهٔ صفحه‌های App Router که گذاشتم: تنظیمات، پیشنهاد منبع، نحوهٔ کار جستجو، حریم خصوصی، شرایط، تماس.
+
+API را `apps/backend` با FastAPI در `app/main.py` نوشتم و با Uvicorn بالا می‌آید. Postgres را در `app/db.py` با SQLAlchemy و `create_engine(..., pool_pre_ping=True)` باز می‌کنم تا اتصال مرده قبل از کوئری عوض شود. Redis را در `app/cache.py` با `Redis.from_url` باز می‌کنم.
+
+خزنده `apps/crawler` است. همان جدول `listings` را می‌نویسد و پاسخ جستجوی عمومی را سرو نمی‌کند. نام سایت‌های منبع را اینجا تکرار نمی‌کنم.
+
+## چرا مرورگر میزبان API را نمی‌بیند
+
+در `apps/frontend/app/_lib/api-base.ts` مسیر را `/api/hamejoo` گذاشتم. `next.config.mjs` پیشوند `/api/hamejoo/:path*` را روی سرور Next به API بازنویسی می‌کند. مرورگر `GET /api/hamejoo/search` می‌زند و API همان را به‌صورت `GET /search` می‌بیند. مبدأ API را داخل صفحه نگذاشتم تا عوض شدنش به کلاینت نرسد.
+
+## شکل جستجو
+
+`GET /search` این پارامترها را می‌گیرد: `q` از ۱ تا ۱۰۰ نویسه، `min_price` و `max_price`، `min_area` و `max_area`، `city` حداکثر ۶۴ نویسه، `district` حداکثر ۱۲۸، `sort` یکی از `relevance` و `newest` و `price_asc` و `price_desc`، `limit` از ۱ تا ۵۰ با پیش‌فرض ۲۰، و `offset`. اگر `city` حذف شود پیش‌فرض API تهران است. صفحهٔ جستجو عمداً `city` را رشتهٔ خالی می‌فرستد تا این پیش‌فرض اعمال نشود؛ وگرنه یک جستجوی سراسری بی‌صدا به تهران محدود می‌شد. اگر جعبهٔ متن پر باشد `sort` را `relevance` می‌گذارم، وگرنه `newest`.
+
+قبل از SQL کلید کش را از JSON پارامترها با SHA-256 می‌سازم (`make_cache_key` در `cache.py`). برخورد، `SearchResponse` را از Redis برمی‌گرداند. خطا، SQLAlchemy است. `q` غیرخالی با `to_tsvector('simple', title || snippet || city || district)` در برابر `plainto_tsquery('simple', q)` سنجیده می‌شود، یا `title ILIKE`، یا `district ILIKE`. پیکربندی `simple` را گذاشتم چون متن آگهی فارسی است و فرهنگ لغت انگلیسی Postgres کمکی به ریشهٔ کلمه نمی‌کند. فیلتر قیمت و متراژ و شهر و محله فقط وقتی اضافه می‌شود که پارامتر آمده باشد.
+
+ردیف باید دیده شود: `availability = active`، یا `expired` که `expired_at` هنوز داخل مهلت است. `DEFAULT_EXPIRED_GRACE_DAYS` در `listing_constants.py` برابر ۷ است و همان مقدار در تنظیم `listing_expired_grace_days` است. صفحهٔ عمومی نحوهٔ کار هم همین هفت روز را می‌گوید: بعد از حذف در مبدأ، آگهی منقضی می‌ماند و بعد ردیف فیزیکی پاک می‌شود.
+
+مرتب‌سازی را این‌طور بستم. اول ردیف‌های آلور و آزادچی را جلوتر از بقیه می‌آورم، چون آن دو بازار خودم‌اند و در نتیجهٔ یک جستجوی مشترک نباید پشت منابع دیگر گم شوند. بعد، اگر `sort` برابر `relevance` و `q` پر باشد، `ts_rank` همان بردار و سپس `created_at` نزولی. `price_asc` و `price_desc` قیمت تهی را آخر می‌گذارند. هر حالت دیگر، از جمله `newest`، با `created_at` نزولی است. تعداد کل از پنجرهٔ `count` روی همان فیلتر می‌آید، و اگر صفحه خالی باشد یک `count` جدا. بدنه `SearchResponse` است: `total`، `limit`، `offset`، `items` از نوع `ListingOut`. این JSON را ۶۰ ثانیه در Redis نگه می‌دارم. جستجوی تکراری در این فاصله نباید دوباره همان SQL را بزند.
+
+اگر `q` باشد و `offset` صفر و `total` بیشتر از صفر، `_log_search_query` روی `search_queries` upsert می‌کند: `q` کلید اصلی، `count` یکی زیاد، `last_seen` الان. کوتاه‌تر از ۲ نویسه یا بلندتر از ۱۲۰ را لاگ نمی‌کنم تا پیشنهادها با نویسهٔ تصادفی پر نشود.
+
+`search_listings` در `crud.py` مسیر SQL دوم با همان قاعدهٔ دیده‌شدن و همان تطبیق متن است. مسیری که بازنویسی Next صدا می‌زند هندلر `GET /search` در `main.py` است.
+
+روی مسیرهای خواندنی، از جمله `/search` و `/suggest` و `/latest` و `/listing/{listing_id}` و `/stats/catalog-listed`، محدودیت نرخ را با slowapi و `get_remote_address` گذاشتم.
+
+## پیشنهاد، تازه‌ها، و پیشنهاد منبع
+
+`GET /suggest` با `q` حداکثر ۸۰ و `limit` از ۱ تا ۱۵ (پیش‌فرض ۸) می‌آید و ۳۰ ثانیه کش می‌شود. پر کردن به ترتیب است و بعد تکراری‌ها حذف می‌شوند: پیشوند و شامل‌بودن روی `search_queries` با ترتیب پیشوند، سپس `count`، سپس `last_seen` (نوع `history`)؛ بعد عنوان آگهی‌های تازهٔ قابل‌دیدن (نوع `listing`)؛ اگر هیچ‌کدام نبود یک فهرست ثابت (نوع `fallback`). روی `SuggestionItem` نوع‌های `history` و `listing` و `trending` و `fallback` هست.
+
+`GET /latest` آگهی‌های قابل‌دیدن را با `created_at` نزولی می‌دهد، ۶۰ ثانیه کش، همان شکل `SearchResponse`. `GET /listing/{listing_id}` یک `ListingOut` است اگر ردیف هنوز قابل‌دیدن باشد.
+
+`POST /source-requests` نام سایت، نشانی، و در صورت بودن دسته و توضیح و راه تماس را در `source_requests` با وضعیت پیش‌فرض `pending` ذخیره می‌کند. فیلد `website` را honeypot گذاشتم تا ارسال ماشینی خالی نماند و وارد جدول نشود.
+
+`GET /health` وضعیت کوتاه است. `GET /stats/catalog-listed` تعداد فعال، منقضی داخل مهلت، و حذف‌شدهٔ تجمعی را می‌دهد و کش آمار کاتالوگ را ۵۰ ثانیه گذاشتم (`catalog_stats_cache_ttl_seconds`). `GET /listing-lifecycle-stats` اسنپ‌شات پاک‌سازی است: حذف فیزیکی تجمعی، زمان آخرین اجرا، شمارش آخرین اجرا، فعال‌های جاری، منقضی‌های داخل مهلت، و طول مهلت. همان مسیر را روی صفحهٔ عمومی نحوهٔ کار نام بردم تا مهلت هفت‌روزه ادعا نباشد.
+
+## نوشتن خزنده
+
+`CrawledListing` در `apps/crawler/app/types.py` عنوان، اسنیپت، قیمت، متراژ، شهر، محله، اتاق، منبع، نشانی منبع، نشانی تصویر و هش را دارد. `save_listings` ردیف بی‌هش را دور می‌ریزد، تکراری‌های همان هش را یکی می‌کند، `availability` را `active` و `last_verified_at` را زمان UTC الان می‌گذارد و در `listings` درج می‌کند. در تعارض `hash` عنوان و اسنیپت و قیمت و متراژ و شهر و محله و اتاق و نشانی‌ها و وضعیت و `last_verified_at` را تازه می‌کند و `expired_at` را خالی می‌کند؛ آگهی‌ای که دوباره دیده شد نباید منقضی بماند. اگر درج دسته‌ای شکست بخورد، ردیف‌به‌ردیف دوباره می‌زنم تا یک ردیف خراب کل دور را نیندازد.
+
+`run_once` اول طرح را مطمئن می‌کند، بعد برای همان دور یک مرورگر Playwright را از `launch_shared_browser_context` باز می‌کند. تعداد کار هر دور را با `max_jobs_per_run` بستم تا یک اجرا جدول را قفل نکند. جمع‌شده‌ها از `save_listings` رد می‌شوند.
+
+## کتابخانه‌ها، همان‌طور که در فایل‌ها آمده
+
+در `apps/frontend/package.json`: next ^14.2.35، react 18.3.1، react-dom 18.3.1، typescript 5.7.3، tailwindcss 3.4.17، postcss 8.4.49، autoprefixer 10.4.20، و نوع‌های node و react و react-dom.
+
+در `apps/backend/requirements.txt` نسخه پین نشده: fastapi، uvicorn[standard]، sqlalchemy، psycopg[binary]، redis، pydantic-settings، slowapi.
+
+در `apps/crawler/requirements.txt` نسخه پین نشده: playwright، sqlalchemy، psycopg[binary]، pydantic-settings، httpx، pytest.
+
+میزبانی و رمزها را اینجا نیاوردم.
 
 ## English
 
-Hamejoo is a place to search listings across housing, cars, goods, and services. The result is on Hamejoo. The listing detail stays on the original source.
+I built Hamejoo because housing, car, goods, and service listings sit on separate sites, and I wanted one phrase to be enough. The result stays on Hamejoo. The listing stays on the source site. Hamejoo is not a shop; I did not build a destination page.
 
 Site: [hamejoo.ir](https://hamejoo.ir)
 
-The public site links search, settings, privacy, terms, contact, how search works, and a source suggestion form. The public how-search page describes crawl of public pages, metadata extraction, indexing after normalization, an expired mark for about seven days after the source listing is gone, then physical deletion, and a click through to the source page. It also says listing images and long descriptions are not uploaded onto Hamejoo.
+### Why I keep only metadata
 
-## Parts
+On the public how-search page I wrote that a crawl reads a public page and keeps title, category, price, location, and publish time. I do not upload the image or the long description onto Hamejoo. That is why `snippet` on `listings` is at most 300 characters and `image_url` is an address, not an image file. Title is at most 512 characters. Price, area, city, district, and room count sit on the same row so search filters do not depend on the full listing text.
 
-Three applications sit in the private product tree. Only what those files declare is named here.
+A click goes to `source_url`. In `apps/frontend/app/_lib/outbound.ts` I set `rel` to `noopener noreferrer nofollow` and record the click with `navigator.sendBeacon`, or `fetch` with `keepalive` when beacon is missing. `POST /listing-clicks` returns 204. A `listing_clicks` row is the listing id, the source name, and the time. I do not store the outbound URL or the page. Otherwise Hamejoo would become a log of where the user went.
 
-The web app is `apps/frontend` (package name `hamejoo-frontend`). `apps/frontend/app/page.tsx` is the home page. Search UI is `apps/frontend/app/search/page.tsx`. Other App Router pages in that tree include settings, submit-source, how-search-works, privacy, terms, and contact.
+### Three programs, one table
 
-The browser does not call the API host directly. `apps/frontend/app/_lib/api-base.ts` sets `API_BASE_PATH` to `/api/hamejoo`. `apps/frontend/next.config.mjs` rewrites `/api/hamejoo/:path*` onto the backend. A search request from the page is therefore `GET /api/hamejoo/search` in the browser and `GET /search` on the API.
+The private tree has three apps. The web app is `apps/frontend`, package name `hamejoo-frontend`. Home is `app/page.tsx`. Search is `app/search/page.tsx`. The other App Router pages I shipped are settings, submit-source, how-search-works, privacy, terms, and contact.
 
-The API is `apps/backend`, a FastAPI application in `apps/backend/app/main.py`, served with Uvicorn. PostgreSQL is opened in `apps/backend/app/db.py` with SQLAlchemy `create_engine` and `pool_pre_ping=True`. Redis is opened in `apps/backend/app/cache.py` with `Redis.from_url`.
+The API is `apps/backend`, FastAPI in `app/main.py`, served by Uvicorn. I open Postgres in `app/db.py` with SQLAlchemy `create_engine(..., pool_pre_ping=True)` so a dead connection is replaced before the query. I open Redis in `app/cache.py` with `Redis.from_url`.
 
-The crawler is `apps/crawler`. It writes the same `listings` table. It does not serve the public search response.
+The crawler is `apps/crawler`. It writes the same `listings` table and does not serve the public search response. I am not repeating source site names here.
 
-## Search request
+### Why the browser never sees the API origin
 
-`GET /search` in `apps/backend/app/main.py` accepts `q` (1–100 characters), `min_price`, `max_price`, `min_area`, `max_area`, `city` (default `تهران` when the parameter is omitted, maximum 64 characters), `district`, `sort` (`relevance`, `newest`, `price_asc`, `price_desc`), `limit` (1–50, default 20), and `offset`.
+In `apps/frontend/app/_lib/api-base.ts` I set the path to `/api/hamejoo`. `next.config.mjs` rewrites `/api/hamejoo/:path*` on the Next server onto the API. The browser calls `GET /api/hamejoo/search`. The API sees `GET /search`. I did not put the API origin in the page, so changing it does not reach the client.
 
-The search page builds the query itself. When the text box is non-empty, `sort` is `relevance`; otherwise it is `newest`. The page sets `city` to an empty string so the API default of Tehran is not applied. Results are fetched from `/api/hamejoo/search`.
+### The search shape
 
-Before SQL, the handler builds a cache key. `make_cache_key` in `cache.py` hashes the JSON payload with SHA-256 and prefixes it. A hit returns `SearchResponse` from Redis. A miss runs SQLAlchemy filters in `_apply_filters`. A non-empty `q` matches `to_tsvector('simple', title || snippet || city || district)` against `plainto_tsquery('simple', q)`, or `title ILIKE`, or `district ILIKE`. Price, area, city, and district filters are added only when those parameters are present. Rows must be publicly visible: `availability = active`, or `availability = expired` with `expired_at` still inside the grace window (`listing_constants.py` sets `DEFAULT_EXPIRED_GRACE_DAYS` to 7).
+`GET /search` takes `q` (1–100 characters), `min_price`, `max_price`, `min_area`, `max_area`, `city` (max 64), `district` (max 128), `sort` (`relevance`, `newest`, `price_asc`, `price_desc`), `limit` (1–50, default 20), and `offset`. If `city` is omitted, the API default is Tehran. The search page deliberately sends `city` as an empty string so that default is not applied. Otherwise a nationwide query would silently collapse to Tehran. When the text box is non-empty I set `sort` to `relevance`; otherwise `newest`.
 
-Sort `relevance` with a query orders by `ts_rank` of that same `to_tsvector` expression, then `created_at` descending. `price_asc` and `price_desc` put null prices last. Any other sort, including `newest`, orders by `created_at` descending. The page size is `limit` and `offset`. The total uses a window count on the filtered statement, or a separate count when the page is empty. The JSON body is `SearchResponse`: `total`, `limit`, `offset`, and `items` of `ListingOut`. The handler stores that JSON in Redis for 60 seconds. When `q` is present, `offset` is 0, and `total` is greater than 0, `_log_search_query` upserts `search_queries` (`q` primary key, `count` incremented, `last_seen` set to now). Queries shorter than 2 characters or longer than 120 characters are not logged.
+Before SQL I build a cache key by SHA-256 of the JSON parameters (`make_cache_key` in `cache.py`). A hit returns `SearchResponse` from Redis. A miss runs SQLAlchemy. A non-empty `q` matches `to_tsvector('simple', title || snippet || city || district)` against `plainto_tsquery('simple', q)`, or `title ILIKE`, or `district ILIKE`. I used the `simple` configuration because listing text is Persian and Postgres's English dictionary does not help with stemming. Price, area, city, and district filters are added only when those parameters are present.
 
-`apps/backend/app/crud.py` has a second SQL path, `search_listings`, with the same visibility rule and the same full-text plus `ILIKE` match. The HTTP handler above is the path the Next.js rewrite calls.
+A row must be visible: `availability = active`, or `expired` with `expired_at` still inside the grace window. `DEFAULT_EXPIRED_GRACE_DAYS` in `listing_constants.py` is 7, and `listing_expired_grace_days` is the same. The public how-search page says the same seven days: after the source deletes the listing, Hamejoo marks it expired, then physically deletes the row.
 
-Rate limits use `slowapi` (`Limiter` with `get_remote_address`) on the read routes, including `/search`, `/suggest`, `/latest`, `/listing/{listing_id}`, and `/stats/catalog-listed`.
+I closed the sort like this. First I put Alwer and Azadchi rows ahead of the rest, because those two markets are mine and they should not disappear behind other sources in a shared result. Then, when `sort` is `relevance` and `q` is set, I order by `ts_rank` of that vector and `created_at` descending. `price_asc` and `price_desc` put null prices last. Any other sort, including `newest`, orders by `created_at` descending. The total is a window count on the filtered statement, or a separate count when the page is empty. The body is `SearchResponse`: `total`, `limit`, `offset`, and `items` of `ListingOut`. I keep that JSON in Redis for 60 seconds. A repeated search in that window should not run the same SQL again.
 
-## Suggest, latest, and click
+When `q` is present, `offset` is 0, and `total` is greater than 0, `_log_search_query` upserts `search_queries`: `q` is the primary key, `count` increments, `last_seen` is now. I do not log queries shorter than 2 characters or longer than 120, so suggestions do not fill with random characters.
 
-`GET /suggest` takes `q` (max 80) and `limit` (1–15, default 8). The response is cached for 30 seconds. Items are filled in order, then de-duplicated: prefix and contains matches on `search_queries` ordered by prefix match, then `count`, then `last_seen` (`kind` `history`); then recent visible `listings.title` values (`kind` `listing`); then a fixed fallback list when nothing else matches (`kind` `fallback`). Kinds on `SuggestionItem` are `history`, `listing`, `trending`, and `fallback`.
+`search_listings` in `crud.py` is a second SQL path with the same visibility rule and the same text match. The path the Next rewrite calls is the `GET /search` handler in `main.py`.
 
-`GET /latest` returns visible listings ordered by `created_at` descending, cached for 60 seconds, with the same `SearchResponse` shape.
+On the read routes, including `/search`, `/suggest`, `/latest`, `/listing/{listing_id}`, and `/stats/catalog-listed`, I rate-limit with slowapi and `get_remote_address`.
 
-`GET /listing/{listing_id}` returns one `ListingOut` when the row is publicly visible.
+### Suggest, latest, and a source suggestion
 
-`POST /listing-clicks` with body `{"listing_id": <int>}` returns 204. The row written to `listing_clicks` stores `listing_id`, `source`, and `clicked_at`. The model comment states that the outbound URL and the page are not stored. The web client in `apps/frontend/app/_lib/outbound.ts` sends that POST with `navigator.sendBeacon` when available, otherwise `fetch` with `keepalive`. The anchor `href` stays `source_url`. `rel` is `noopener noreferrer nofollow`.
+`GET /suggest` takes `q` (max 80) and `limit` (1–15, default 8) and is cached for 30 seconds. I fill items in order, then drop duplicates: prefix and contains matches on `search_queries`, ordered by prefix match, then `count`, then `last_seen` (`kind` `history`); then recent visible `listings.title` values (`kind` `listing`); then a fixed list when nothing else matches (`kind` `fallback`). `SuggestionItem` kinds are `history`, `listing`, `trending`, and `fallback`.
 
-`POST /source-requests` accepts `site_name`, `site_url`, optional `category`, `description`, and `contact`, and stores a `source_requests` row. The schema includes a honeypot field `website`.
+`GET /latest` returns visible listings by `created_at` descending, cached 60 seconds, same `SearchResponse` shape. `GET /listing/{listing_id}` returns one `ListingOut` when the row is still visible.
 
-`GET /health` returns a short status object. `GET /stats/catalog-listed` returns active, expired, and lifetime-removed counts. `GET /listing-lifecycle-stats` returns the purge snapshot: cumulative physically removed rows, last purge time, last-run counts, current active and expired-in-grace counts, and the grace length. The public how-search page names this stats route.
+`POST /source-requests` stores site name, URL, and optional category, description, and contact on `source_requests`, status default `pending`. I added a honeypot field `website` so an automated post does not land in that table.
 
-## Data
+`GET /health` is a short status. `GET /stats/catalog-listed` returns active, expired-in-grace, and lifetime-removed counts. I cache catalog stats for 50 seconds (`catalog_stats_cache_ttl_seconds`). `GET /listing-lifecycle-stats` is the purge snapshot: cumulative physical removals, last purge time, last-run counts, current active and expired-in-grace counts, and the grace length. I named that route on the public how-search page so the seven-day window is not only a claim.
 
-SQLAlchemy models in `apps/backend/app/models.py`:
+### Crawler write path
 
-- `listings`: `id`, `title` (max 512), `snippet` (max 300), `price`, `area`, `city`, `district`, `rooms`, `source`, `source_url`, `image_url`, unique `hash`, `availability` (`active` or `expired`), `last_verified_at`, `expired_at`, `created_at`, `updated_at`. Indexes include `city`, `district`, `source`, `hash`, `availability`, `created_at`, `price`, and `area`.
-- `search_queries`: one row per query string, with `count` and `last_seen`.
-- `listing_clicks`: click id, listing id, source, time.
-- `listing_lifecycle_stats`: a single aggregate row (`id` 1) for physical removals and the last purge snapshot.
-- `listing_purge_run_log`: one row per purge run (`active_count`, `expired_in_grace_count`, `purged_count`).
-- `source_requests`: suggested site name and URL, optional category, description, contact, status default `pending`.
+`CrawledListing` in `apps/crawler/app/types.py` carries title, snippet, price, area, city, district, rooms, source, source URL, image URL, and hash. `save_listings` drops rows with an empty hash, collapses duplicates on hash, sets `availability` to `active` and `last_verified_at` to the current UTC time, and inserts into `listings`. On conflict of `hash` it updates title, snippet, price, area, city, district, rooms, URLs, availability, and `last_verified_at`, and clears `expired_at`. A listing seen again must not stay expired. If the batch insert fails, I retry row by row so one bad row does not drop the round.
 
-## Crawler write path
+`run_once` ensures the schema, then opens one Playwright browser through `launch_shared_browser_context` for that round. I cap the round with `max_jobs_per_run` so one run does not lock the table. Collected items go through `save_listings`.
 
-`apps/crawler/app/types.py` defines `CrawledListing` with title, snippet, price, area, city, district, rooms, source, source URL, image URL, and hash. `save_listings` in `apps/crawler/app/main.py` drops rows with an empty hash, collapses duplicates on hash, sets `availability` to `active` and `last_verified_at` to the current UTC time, and inserts into `listings`. On conflict of `hash` it updates title, snippet, price, area, city, district, rooms, source URL, image URL, availability, and `last_verified_at`, and clears `expired_at`. If the batch insert fails, it retries row by row.
+### Libraries, as the files declare them
 
-`run_once` ensures the schema, then opens one Playwright browser through `launch_shared_browser_context` in `apps/crawler/app/playwright_shared.py` for that round. Each job is bounded by `max_jobs_per_run`. Collected items are saved through `save_listings`.
+In `apps/frontend/package.json`: next ^14.2.35, react 18.3.1, react-dom 18.3.1, typescript 5.7.3, tailwindcss 3.4.17, postcss 8.4.49, autoprefixer 10.4.20, and the node, react, and react-dom type packages.
 
-## Libraries
+In `apps/backend/requirements.txt`, versions not pinned: fastapi, uvicorn[standard], sqlalchemy, psycopg[binary], redis, pydantic-settings, slowapi.
 
-Declared in `apps/frontend/package.json`:
+In `apps/crawler/requirements.txt`, versions not pinned: playwright, sqlalchemy, psycopg[binary], pydantic-settings, httpx, pytest.
 
-- next ^14.2.35
-- react 18.3.1
-- react-dom 18.3.1
-- typescript 5.7.3
-- tailwindcss 3.4.17
-- postcss 8.4.49
-- autoprefixer 10.4.20
-- @types/node 22.10.7
-- @types/react 18.3.18
-- @types/react-dom 18.3.5
-
-Declared in `apps/backend/requirements.txt` with no pinned versions: fastapi, uvicorn[standard], sqlalchemy, psycopg[binary], redis, pydantic-settings, slowapi.
-
-Declared in `apps/crawler/requirements.txt` with no pinned versions: playwright, sqlalchemy, psycopg[binary], pydantic-settings, httpx, pytest.
-
-## Boundaries
-
-Hosting and credentials are omitted. Crawled site names are omitted.
+I am not putting hosting or credentials here.
 
 ## پروژه‌های مرتبط
 
-- [alwer-intro](https://github.com/mnhashemabadi/alwer-intro): آلور بازار نیازمندی است؛ درخواست خرید ثبت می‌شود، فروشنده پیشنهاد قیمت می‌فرستد، و آگهی فروش هم در همان بازار است.
-- [kasbafzar-intro](https://github.com/mnhashemabadi/kasbafzar-intro): کسب‌افزار پیشخوان فروش و گزارش مالی است؛ فروش، مشتری و هزینه ثبت می‌شود و فاکتور می‌تواند لینک پرداخت داشته باشد.
-- [azadchi-intro](https://github.com/mnhashemabadi/azadchi-intro): آزادچی بازار نیازمندی مناطق آزاد و ویژهٔ اقتصادی است؛ آگهی در همان محدوده جستجو می‌شود و گفتگو داخل همان محصول است.
-- [afzi-intro](https://github.com/mnhashemabadi/afzi-intro): افزی یک نشانی http یا https را به لینک کوتاه تبدیل می‌کند و باز کردن آن لینک به همان صفحه می‌رود.
-- [alweryar-intro](https://github.com/mnhashemabadi/alweryar-intro): آلوریار شبکهٔ همکاران آلور برای بررسی آگهی و همکاری در فروش است.
-- [alwerchi-intro](https://github.com/mnhashemabadi/alwerchi-intro): آلورچی خانهٔ فروشگاه‌هایی است که کالا و موجودی‌شان در بازار آلور دیده می‌شود و خریدار در آلور می‌ماند.
+- [alwer-intro](https://github.com/mnhashemabadi/alwer-intro): آلور را برای خریداری گذاشتم که درخواست بنویسد و پیشنهاد قیمت‌ها را کنار هم ببیند؛ آگهی فروش هم روی همان بازار است.
+- [kasbafzar-intro](https://github.com/mnhashemabadi/kasbafzar-intro): کسب‌افزار را برای کسی گذاشتم که فروش و مشتری و هزینه را ثبت کند و فاکتور را با لینک پرداخت برای مشتری بفرستد.
+- [azadchi-intro](https://github.com/mnhashemabadi/azadchi-intro): آزادچی را برای آگهی و جستجو در مناطق آزاد گذاشتم؛ گفتگو با طرف معامله داخل خود آزادچی می‌ماند.
+- [afzi-intro](https://github.com/mnhashemabadi/afzi-intro): افزی را برای کوتاه کردن یک نشانی http یا https گذاشتم؛ باز کردن لینک همان صفحه را باز می‌کند.
+- [alweryar-intro](https://github.com/mnhashemabadi/alweryar-intro): آلوریار را برای همکاری در بررسی آگهی و همکاری در فروش آلور گذاشتم.
+- [alwerchi-intro](https://github.com/mnhashemabadi/alwerchi-intro): آلورچی را برای فروشگاهی گذاشتم که کالا و موجودی‌اش در بازار آلور دیده شود و خریدار در آلور بماند.
 
 ## Related
 
-- [alwer-intro](https://github.com/mnhashemabadi/alwer-intro): Alwer is a classifieds marketplace: a buyer posts a request, sellers send price offers, and a sale listing can be posted on the same market.
-- [kasbafzar-intro](https://github.com/mnhashemabadi/kasbafzar-intro): Kasbafzar is a sales desk and a financial report: sales, customers, and expenses are recorded, and an invoice can carry a payment link.
-- [azadchi-intro](https://github.com/mnhashemabadi/azadchi-intro): Azadchi is a classifieds market for free zones and special economic zones: listings are searched in that area, and the conversation stays in the product.
-- [afzi-intro](https://github.com/mnhashemabadi/afzi-intro): Afzi turns an http or https address into a short link, and opening that link goes to the same page.
-- [alweryar-intro](https://github.com/mnhashemabadi/alweryar-intro): Alweryar is Alwer's collaborator network for listing review and for sales collaboration.
-- [alwerchi-intro](https://github.com/mnhashemabadi/alwerchi-intro): Alwerchi is the home of shops whose goods and stock appear on the Alwer marketplace while the buyer stays on Alwer.
+- [alwer-intro](https://github.com/mnhashemabadi/alwer-intro): I built Alwer for a buyer who posts a request and compares price offers side by side; a sale listing sits on the same market.
+- [kasbafzar-intro](https://github.com/mnhashemabadi/kasbafzar-intro): I built Kasbafzar for someone who records sales, customers, and expenses, and sends the customer an invoice with a payment link.
+- [azadchi-intro](https://github.com/mnhashemabadi/azadchi-intro): I built Azadchi for listings and search inside free zones; the conversation with the other party stays in Azadchi.
+- [afzi-intro](https://github.com/mnhashemabadi/afzi-intro): I built Afzi to shorten an http or https address; opening the short link opens that same page.
+- [alweryar-intro](https://github.com/mnhashemabadi/alweryar-intro): I built Alweryar for collaboration on listing review and on sales for Alwer.
+- [alwerchi-intro](https://github.com/mnhashemabadi/alwerchi-intro): I built Alwerchi for a shop whose goods and stock show on the Alwer market while the buyer stays on Alwer.
 
 یادداشت مهندسی کوتاه‌تر: [docs/engineering.md](docs/engineering.md)
 
 Shorter engineering note: [docs/engineering.md](docs/engineering.md)
-

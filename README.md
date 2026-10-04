@@ -1,66 +1,66 @@
 # همه‌جو
 
-من همه‌جو را ساختم چون آگهی مسکن، خودرو، کالا و خدمات روی چند سایت پخش است و من یک عبارت را کافی می‌خواستم. نتیجه روی همه‌جو می‌ماند. خود آگهی روی سایت منبع می‌ماند. همه‌جو فروشگاه نیست؛ من صفحهٔ مقصد نساختم.
+همه‌جو را ساختم چون آگهی مسکن، خودرو، کالا و خدمات روی چند سایت پراکنده است و می‌خواستم یک عبارت برای پیدا کردنشان کافی باشد. نتیجهٔ جستجو روی همه‌جو می‌ماند و خود آگهی روی سایت منبع می‌ماند. همه‌جو فروشگاه نیست و صفحهٔ جدا برای خود آگهی نساختم.
 
 سایت: [hamejoo.ir](https://hamejoo.ir)
 
 ## چرا فقط فراداده را نگه می‌دارم
 
-روی صفحهٔ «نحوهٔ کار جستجو» نوشتم که خزش، صفحهٔ عمومی را می‌خواند و عنوان، دسته‌بندی، قیمت، موقعیت و زمان انتشار را برمی‌دارد. تصویر و توضیح بلند را روی همه‌جو بارگذاری نمی‌کنم. در جدول `listings` برای همین `snippet` را حداکثر ۳۰۰ نویسه گذاشتم و `image_url` فقط نشانی است، نه فایل تصویر. عنوان تا ۵۱۲ نویسه است. قیمت، متراژ، شهر، محله و تعداد اتاق کنار همان ردیف می‌نشینند تا فیلتر جستجو به متن کامل آگهی وابسته نباشد.
+روی صفحهٔ «نحوهٔ کار جستجو» نوشتم که خزش، صفحهٔ عمومی را می‌خواند و عنوان، دسته‌بندی، قیمت، موقعیت و زمان انتشار را برمی‌دارد. تصویر و توضیح بلند را روی همه‌جو بارگذاری نمی‌کنم. برای همین در جدول `listings` مقدار `snippet` را حداکثر ۳۰۰ نویسه گذاشتم و `image_url` فقط نشانی است، نه فایل تصویر. عنوان تا ۵۱۲ نویسه است. قیمت، متراژ، شهر، محله و تعداد اتاق در همان ردیف ذخیره می‌شوند تا فیلتر جستجو به متن کامل آگهی وابسته نباشد.
 
-کلیک، کاربر را به `source_url` می‌برد. در `apps/frontend/app/_lib/outbound.ts` لینک را `noopener noreferrer nofollow` گذاشتم و ثبت کلیک را با `navigator.sendBeacon` می‌فرستم، و اگر نباشد با `fetch` و `keepalive`. `POST /listing-clicks` فقط ۲۰۴ برمی‌گرداند. ردیف `listing_clicks` شناسهٔ آگهی، نام منبع و زمان است. نشانی خروجی و صفحه را ذخیره نمی‌کنم؛ وگرنه همه‌جو به لاگ مسیر کاربر تبدیل می‌شد.
+کلیک، کاربر را به `source_url` می‌برد. در `apps/frontend/app/_lib/outbound.ts` روی لینک `noopener noreferrer nofollow` گذاشتم. ثبت کلیک را با `navigator.sendBeacon` می‌فرستم و اگر در دسترس نباشد با `fetch` و `keepalive`. `POST /listing-clicks` فقط ۲۰۴ برمی‌گرداند. هر ردیف `listing_clicks` شناسهٔ آگهی، نام منبع و زمان است. نشانی مقصد و صفحه را ذخیره نمی‌کنم؛ وگرنه همه‌جو به محل ثبت مسیر کاربر تبدیل می‌شد.
 
 ## سه برنامه، یک جدول
 
-درخت خصوصی سه برنامه دارد. وب `apps/frontend` است، نام بسته `hamejoo-frontend`. صفحهٔ اصلی `app/page.tsx` است و جستجو `app/search/page.tsx`. بقیهٔ صفحه‌های App Router که گذاشتم: تنظیمات، پیشنهاد منبع، نحوهٔ کار جستجو، حریم خصوصی، شرایط، تماس.
+مخزن خصوصی سه برنامه دارد. وب `apps/frontend` است و نام بسته `hamejoo-frontend`. صفحهٔ اصلی `app/page.tsx` است و جستجو `app/search/page.tsx`. بقیهٔ صفحه‌هایی که در App Router گذاشتم: تنظیمات، پیشنهاد منبع، نحوهٔ کار جستجو، حریم خصوصی، شرایط، تماس.
 
-API را `apps/backend` با FastAPI در `app/main.py` نوشتم و با Uvicorn بالا می‌آید. Postgres را در `app/db.py` با SQLAlchemy و `create_engine(..., pool_pre_ping=True)` باز می‌کنم تا اتصال مرده قبل از کوئری عوض شود. Redis را در `app/cache.py` با `Redis.from_url` باز می‌کنم.
+API را در `apps/backend` با FastAPI نوشتم؛ فایلش `app/main.py` است و با Uvicorn بالا می‌آید. Postgres را در `app/db.py` با SQLAlchemy و `create_engine(..., pool_pre_ping=True)` باز می‌کنم تا اتصال قطع‌شده پیش از کوئری جایگزین شود. Redis را در `app/cache.py` با `Redis.from_url` باز می‌کنم.
 
-خزنده `apps/crawler` است. همان جدول `listings` را می‌نویسد و پاسخ جستجوی عمومی را سرو نمی‌کند. نام سایت‌های منبع را اینجا تکرار نمی‌کنم.
+خزنده `apps/crawler` است. همان جدول `listings` را می‌نویسد و پاسخ جستجوی عمومی را برنمی‌گرداند. نام سایت‌های منبع را اینجا تکرار نمی‌کنم.
 
-## چرا مرورگر میزبان API را نمی‌بیند
+## چرا مرورگر مبدأ API را نمی‌بیند
 
-در `apps/frontend/app/_lib/api-base.ts` مسیر را `/api/hamejoo` گذاشتم. `next.config.mjs` پیشوند `/api/hamejoo/:path*` را روی سرور Next به API بازنویسی می‌کند. مرورگر `GET /api/hamejoo/search` می‌زند و API همان را به‌صورت `GET /search` می‌بیند. مبدأ API را داخل صفحه نگذاشتم تا عوض شدنش به کلاینت نرسد.
+در `apps/frontend/app/_lib/api-base.ts` مسیر را `/api/hamejoo` گذاشتم. `next.config.mjs` پیشوند `/api/hamejoo/:path*` را روی سرور Next به API بازنویسی می‌کند. مرورگر `GET /api/hamejoo/search` می‌زند و API همان را به‌صورت `GET /search` می‌بیند. مبدأ API را داخل صفحه نگذاشتم تا با عوض شدنش کلاینت درگیر نشود.
 
 ## شکل جستجو
 
-`GET /search` این پارامترها را می‌گیرد: `q` از ۱ تا ۱۰۰ نویسه، `min_price` و `max_price`، `min_area` و `max_area`، `city` حداکثر ۶۴ نویسه، `district` حداکثر ۱۲۸، `sort` یکی از `relevance` و `newest` و `price_asc` و `price_desc`، `limit` از ۱ تا ۵۰ با پیش‌فرض ۲۰، و `offset`. اگر `city` حذف شود پیش‌فرض API تهران است. صفحهٔ جستجو عمداً `city` را رشتهٔ خالی می‌فرستد تا این پیش‌فرض اعمال نشود؛ وگرنه یک جستجوی سراسری بی‌صدا به تهران محدود می‌شد. اگر جعبهٔ متن پر باشد `sort` را `relevance` می‌گذارم، وگرنه `newest`.
+`GET /search` این پارامترها را می‌گیرد: `q` از ۱ تا ۱۰۰ نویسه، `min_price` و `max_price`، `min_area` و `max_area`، `city` حداکثر ۶۴ نویسه، `district` حداکثر ۱۲۸، `sort` یکی از `relevance` و `newest` و `price_asc` و `price_desc`، `limit` از ۱ تا ۵۰ با پیش‌فرض ۲۰، و `offset`. اگر `city` حذف شود پیش‌فرض API تهران است. صفحهٔ جستجو عمداً `city` را رشتهٔ خالی می‌فرستد تا این پیش‌فرض اعمال نشود؛ وگرنه یک جستجوی سراسری بی‌صدا به تهران محدود می‌شد. اگر کادر متن پر باشد `sort` را `relevance` می‌گذارم وگرنه `newest`.
 
-قبل از SQL کلید کش را از JSON پارامترها با SHA-256 می‌سازم (`make_cache_key` در `cache.py`). برخورد، `SearchResponse` را از Redis برمی‌گرداند. خطا، SQLAlchemy است. `q` غیرخالی با `to_tsvector('simple', title || snippet || city || district)` در برابر `plainto_tsquery('simple', q)` سنجیده می‌شود، یا `title ILIKE`، یا `district ILIKE`. پیکربندی `simple` را گذاشتم چون متن آگهی فارسی است و فرهنگ لغت انگلیسی Postgres کمکی به ریشهٔ کلمه نمی‌کند. فیلتر قیمت و متراژ و شهر و محله فقط وقتی اضافه می‌شود که پارامتر آمده باشد.
+قبل از SQL کلید کش را از JSON پارامترها با SHA-256 می‌سازم (`make_cache_key` در `cache.py`). اگر کلید در کش باشد، `SearchResponse` از Redis برمی‌گردد. اگر نباشد، کوئری با SQLAlchemy اجرا می‌شود. `q` غیرخالی با `to_tsvector('simple', title || snippet || city || district)` در برابر `plainto_tsquery('simple', q)` سنجیده می‌شود، یا `title ILIKE`، یا `district ILIKE`. پیکربندی `simple` را گذاشتم چون متن آگهی فارسی است و واژه‌نامهٔ انگلیسی Postgres به ریشهٔ کلمه کمکی نمی‌کند. فیلتر قیمت و متراژ و شهر و محله فقط وقتی اضافه می‌شود که پارامتر آمده باشد.
 
-ردیف باید دیده شود: `availability = active`، یا `expired` که `expired_at` هنوز داخل مهلت است. `DEFAULT_EXPIRED_GRACE_DAYS` در `listing_constants.py` برابر ۷ است و همان مقدار در تنظیم `listing_expired_grace_days` است. صفحهٔ عمومی نحوهٔ کار هم همین هفت روز را می‌گوید: بعد از حذف در مبدأ، آگهی منقضی می‌ماند و بعد ردیف فیزیکی پاک می‌شود.
+ردیف باید در نتیجه دیده شود: `availability = active`، یا `expired` که `expired_at` هنوز داخل مهلت است. `DEFAULT_EXPIRED_GRACE_DAYS` در `listing_constants.py` برابر ۷ است و تنظیم `listing_expired_grace_days` همان مقدار را دارد. صفحهٔ عمومی نحوهٔ کار هم همین هفت روز را می‌گوید: بعد از حذف در مبدأ، آگهی منقضی می‌ماند و بعد ردیف به‌صورت فیزیکی پاک می‌شود.
 
-مرتب‌سازی را این‌طور بستم. اول ردیف‌های آلور و آزادچی را جلوتر از بقیه می‌آورم، چون آن دو بازار خودم‌اند و در نتیجهٔ یک جستجوی مشترک نباید پشت منابع دیگر گم شوند. بعد، اگر `sort` برابر `relevance` و `q` پر باشد، `ts_rank` همان بردار و سپس `created_at` نزولی. `price_asc` و `price_desc` قیمت تهی را آخر می‌گذارند. هر حالت دیگر، از جمله `newest`، با `created_at` نزولی است. تعداد کل از پنجرهٔ `count` روی همان فیلتر می‌آید، و اگر صفحه خالی باشد یک `count` جدا. بدنه `SearchResponse` است: `total`، `limit`، `offset`، `items` از نوع `ListingOut`. این JSON را ۶۰ ثانیه در Redis نگه می‌دارم. جستجوی تکراری در این فاصله نباید دوباره همان SQL را بزند.
+ترتیب را این‌طور گذاشتم. اول ردیف‌های آلور و آزادچی را جلوتر از بقیه می‌آورم، چون آن دو بازار خودم‌اند و در نتیجهٔ یک جستجوی مشترک نباید پشت منابع دیگر گم شوند. بعد، اگر `sort` برابر `relevance` باشد و `q` پر باشد، اول `ts_rank` همان بردار می‌آید و سپس `created_at` نزولی. `price_asc` و `price_desc` قیمت تهی را آخر می‌گذارند. هر حالت دیگر، از جمله `newest`، با `created_at` نزولی است. تعداد کل از تابع پنجره‌ای `count` روی همان فیلتر می‌آید و اگر صفحه خالی باشد یک `count` جدا زده می‌شود. بدنه `SearchResponse` است: `total`، `limit`، `offset`، `items` از نوع `ListingOut`. این JSON را ۶۰ ثانیه در Redis نگه می‌دارم. جستجوی تکراری در این فاصله نباید دوباره همان SQL را بزند.
 
-اگر `q` باشد و `offset` صفر و `total` بیشتر از صفر، `_log_search_query` روی `search_queries` upsert می‌کند: `q` کلید اصلی، `count` یکی زیاد، `last_seen` الان. کوتاه‌تر از ۲ نویسه یا بلندتر از ۱۲۰ را لاگ نمی‌کنم تا پیشنهادها با نویسهٔ تصادفی پر نشود.
+اگر `q` باشد و `offset` صفر و `total` بیشتر از صفر، `_log_search_query` روی `search_queries` upsert می‌کند: `q` کلید اصلی است، `count` یکی زیاد می‌شود و `last_seen` زمان همین لحظه است. عبارت کوتاه‌تر از ۲ نویسه یا بلندتر از ۱۲۰ را ثبت نمی‌کنم تا پیشنهادها با نویسهٔ تصادفی پر نشود.
 
-`search_listings` در `crud.py` مسیر SQL دوم با همان قاعدهٔ دیده‌شدن و همان تطبیق متن است. مسیری که بازنویسی Next صدا می‌زند هندلر `GET /search` در `main.py` است.
+`search_listings` در `crud.py` مسیر SQL دوم است، با همان شرط دیده شدن و همان تطبیق متن. مسیری که بازنویسی Next صدا می‌زند هندلر `GET /search` در `main.py` است.
 
 روی مسیرهای خواندنی، از جمله `/search` و `/suggest` و `/latest` و `/listing/{listing_id}` و `/stats/catalog-listed`، محدودیت نرخ را با slowapi و `get_remote_address` گذاشتم.
 
 ## پیشنهاد، تازه‌ها، و پیشنهاد منبع
 
-`GET /suggest` با `q` حداکثر ۸۰ و `limit` از ۱ تا ۱۵ (پیش‌فرض ۸) می‌آید و ۳۰ ثانیه کش می‌شود. پر کردن به ترتیب است و بعد تکراری‌ها حذف می‌شوند: پیشوند و شامل‌بودن روی `search_queries` با ترتیب پیشوند، سپس `count`، سپس `last_seen` (نوع `history`)؛ بعد عنوان آگهی‌های تازهٔ قابل‌دیدن (نوع `listing`)؛ اگر هیچ‌کدام نبود یک فهرست ثابت (نوع `fallback`). روی `SuggestionItem` نوع‌های `history` و `listing` و `trending` و `fallback` هست.
+`GET /suggest` پارامتر `q` را حداکثر ۸۰ نویسه و `limit` را از ۱ تا ۱۵ (پیش‌فرض ۸) می‌گیرد و ۳۰ ثانیه کش می‌شود. آیتم‌ها را به ترتیب پر می‌کنم و بعد تکراری‌ها را حذف می‌کنم: پیشوند و شامل‌بودن روی `search_queries` با ترتیب پیشوند، سپس `count`، سپس `last_seen` (نوع `history`)؛ بعد عنوان آگهی‌های تازهٔ قابل‌دیدن (نوع `listing`)؛ اگر هیچ‌کدام نبود یک فهرست ثابت (نوع `fallback`). روی `SuggestionItem` نوع‌های `history` و `listing` و `trending` و `fallback` هست.
 
-`GET /latest` آگهی‌های قابل‌دیدن را با `created_at` نزولی می‌دهد، ۶۰ ثانیه کش، همان شکل `SearchResponse`. `GET /listing/{listing_id}` یک `ListingOut` است اگر ردیف هنوز قابل‌دیدن باشد.
+`GET /latest` آگهی‌های قابل‌دیدن را با `created_at` نزولی برمی‌گرداند، ۶۰ ثانیه کش می‌شود و همان شکل `SearchResponse` را دارد. `GET /listing/{listing_id}` یک `ListingOut` برمی‌گرداند، به شرطی که ردیف هنوز قابل‌دیدن باشد.
 
-`POST /source-requests` نام سایت، نشانی، و در صورت بودن دسته و توضیح و راه تماس را در `source_requests` با وضعیت پیش‌فرض `pending` ذخیره می‌کند. فیلد `website` را honeypot گذاشتم تا ارسال ماشینی خالی نماند و وارد جدول نشود.
+`POST /source-requests` نام سایت و نشانی را، و اگر آمده باشد دسته و توضیح و راه تماس را، در `source_requests` با وضعیت پیش‌فرض `pending` ذخیره می‌کند. فیلد `website` را honeypot گذاشتم تا ارسال ماشینی وارد جدول نشود.
 
-`GET /health` وضعیت کوتاه است. `GET /stats/catalog-listed` تعداد فعال، منقضی داخل مهلت، و حذف‌شدهٔ تجمعی را می‌دهد و کش آمار کاتالوگ را ۵۰ ثانیه گذاشتم (`catalog_stats_cache_ttl_seconds`). `GET /listing-lifecycle-stats` اسنپ‌شات پاک‌سازی است: حذف فیزیکی تجمعی، زمان آخرین اجرا، شمارش آخرین اجرا، فعال‌های جاری، منقضی‌های داخل مهلت، و طول مهلت. همان مسیر را روی صفحهٔ عمومی نحوهٔ کار نام بردم تا مهلت هفت‌روزه ادعا نباشد.
+`GET /health` وضعیت کوتاه است. `GET /stats/catalog-listed` تعداد فعال، منقضی داخل مهلت، و حذف‌شدهٔ تجمعی را می‌دهد. کش آمار کاتالوگ را ۵۰ ثانیه گذاشتم (`catalog_stats_cache_ttl_seconds`). `GET /listing-lifecycle-stats` وضعیت لحظه‌ای پاک‌سازی است: حذف فیزیکی تجمعی، زمان آخرین اجرا، شمارش آخرین اجرا، فعال‌های جاری، منقضی‌های داخل مهلت، و طول مهلت. همان مسیر را روی صفحهٔ عمومی نحوهٔ کار نام بردم تا مهلت هفت‌روزه فقط ادعا نباشد.
 
-## نوشتن خزنده
+## مسیر نوشتن خزنده
 
-`CrawledListing` در `apps/crawler/app/types.py` عنوان، اسنیپت، قیمت، متراژ، شهر، محله، اتاق، منبع، نشانی منبع، نشانی تصویر و هش را دارد. `save_listings` ردیف بی‌هش را دور می‌ریزد، تکراری‌های همان هش را یکی می‌کند، `availability` را `active` و `last_verified_at` را زمان UTC الان می‌گذارد و در `listings` درج می‌کند. در تعارض `hash` عنوان و اسنیپت و قیمت و متراژ و شهر و محله و اتاق و نشانی‌ها و وضعیت و `last_verified_at` را تازه می‌کند و `expired_at` را خالی می‌کند؛ آگهی‌ای که دوباره دیده شد نباید منقضی بماند. اگر درج دسته‌ای شکست بخورد، ردیف‌به‌ردیف دوباره می‌زنم تا یک ردیف خراب کل دور را نیندازد.
+`CrawledListing` در `apps/crawler/app/types.py` عنوان، اسنیپت، قیمت، متراژ، شهر، محله، اتاق، منبع، نشانی منبع، نشانی تصویر و هش را دارد. `save_listings` ردیف بی‌هش را دور می‌ریزد، تکراری‌های همان هش را یکی می‌کند، `availability` را `active` و `last_verified_at` را زمان UTC الان می‌گذارد و در `listings` درج می‌کند. اگر `hash` از قبل باشد، عنوان و اسنیپت و قیمت و متراژ و شهر و محله و اتاق و نشانی‌ها و وضعیت و `last_verified_at` را تازه می‌کند و `expired_at` را خالی می‌کند؛ آگهی‌ای که دوباره دیده شد نباید منقضی بماند. اگر درج دسته‌ای شکست بخورد، ردیف‌به‌ردیف دوباره می‌زنم تا یک ردیف خراب کل دور را نیندازد.
 
-`run_once` اول طرح را مطمئن می‌کند، بعد برای همان دور یک مرورگر Playwright را از `launch_shared_browser_context` باز می‌کند. تعداد کار هر دور را با `max_jobs_per_run` بستم تا یک اجرا جدول را قفل نکند. جمع‌شده‌ها از `save_listings` رد می‌شوند.
+`run_once` اول طرح پایگاه را برقرار می‌کند، بعد برای همان دور یک مرورگر Playwright را از `launch_shared_browser_context` باز می‌کند. تعداد کار هر دور را با `max_jobs_per_run` محدود کردم تا یک اجرا جدول را قفل نکند. آگهی‌های جمع‌شده از `save_listings` رد می‌شوند.
 
 ## کتابخانه‌ها، همان‌طور که در فایل‌ها آمده
 
 در `apps/frontend/package.json`: next ^14.2.35، react 18.3.1، react-dom 18.3.1، typescript 5.7.3، tailwindcss 3.4.17، postcss 8.4.49، autoprefixer 10.4.20، و نوع‌های node و react و react-dom.
 
-در `apps/backend/requirements.txt` نسخه پین نشده: fastapi، uvicorn[standard]، sqlalchemy، psycopg[binary]، redis، pydantic-settings، slowapi.
+در `apps/backend/requirements.txt` نسخه را پین نکرده‌ام: fastapi، uvicorn[standard]، sqlalchemy، psycopg[binary]، redis، pydantic-settings، slowapi.
 
-در `apps/crawler/requirements.txt` نسخه پین نشده: playwright، sqlalchemy، psycopg[binary]، pydantic-settings، httpx، pytest.
+در `apps/crawler/requirements.txt` نسخه را پین نکرده‌ام: playwright، sqlalchemy، psycopg[binary]، pydantic-settings، httpx، pytest.
 
 میزبانی و رمزها را اینجا نیاوردم.
 
@@ -132,12 +132,12 @@ I am not putting hosting or credentials here.
 
 ## پروژه‌های مرتبط
 
-- [alwer-intro](https://github.com/mnhashemabadi/alwer-intro): آلور را برای خریداری گذاشتم که درخواست بنویسد و پیشنهاد قیمت‌ها را کنار هم ببیند؛ آگهی فروش هم روی همان بازار است.
-- [kasbafzar-intro](https://github.com/mnhashemabadi/kasbafzar-intro): کسب‌افزار را برای کسی گذاشتم که فروش و مشتری و هزینه را ثبت کند و فاکتور را با لینک پرداخت برای مشتری بفرستد.
-- [azadchi-intro](https://github.com/mnhashemabadi/azadchi-intro): آزادچی را برای آگهی و جستجو در مناطق آزاد گذاشتم؛ گفتگو با طرف معامله داخل خود آزادچی می‌ماند.
-- [afzi-intro](https://github.com/mnhashemabadi/afzi-intro): افزی را برای کوتاه کردن یک نشانی http یا https گذاشتم؛ باز کردن لینک همان صفحه را باز می‌کند.
-- [alweryar-intro](https://github.com/mnhashemabadi/alweryar-intro): آلوریار را برای همکاری در بررسی آگهی و همکاری در فروش آلور گذاشتم.
-- [alwerchi-intro](https://github.com/mnhashemabadi/alwerchi-intro): آلورچی را برای فروشگاهی گذاشتم که کالا و موجودی‌اش در بازار آلور دیده شود و خریدار در آلور بماند.
+- [alwer-intro](https://github.com/mnhashemabadi/alwer-intro): آلور را برای خریداری ساختم که درخواست بنویسد و پیشنهاد قیمت‌ها را کنار هم ببیند؛ آگهی فروش هم روی همان بازار است.
+- [kasbafzar-intro](https://github.com/mnhashemabadi/kasbafzar-intro): کسب‌افزار را برای کسی ساختم که فروش و مشتری و هزینه را ثبت کند و فاکتور را با لینک پرداخت برای مشتری بفرستد.
+- [azadchi-intro](https://github.com/mnhashemabadi/azadchi-intro): آزادچی را برای آگهی و جستجو در مناطق آزاد ساختم؛ گفتگو با طرف معامله داخل خود آزادچی می‌ماند.
+- [afzi-intro](https://github.com/mnhashemabadi/afzi-intro): افزی را برای کوتاه کردن یک نشانی http یا https ساختم؛ باز کردن لینک کوتاه همان صفحه را باز می‌کند.
+- [alweryar-intro](https://github.com/mnhashemabadi/alweryar-intro): آلوریار را برای همکاری در بررسی آگهی و همکاری در فروش آلور ساختم.
+- [alwerchi-intro](https://github.com/mnhashemabadi/alwerchi-intro): آلورچی را برای فروشگاهی ساختم که کالا و موجودی‌اش در بازار آلور دیده شود و خریدار در آلور بماند.
 
 ## Related
 
